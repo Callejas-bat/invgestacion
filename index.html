@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Prediction API</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+</head>
+<body>
+    <p id="prediction">Loading...</p>
+
+    <script>
+        let model, scaler, labelEncoder;
+
+        // Función para cargar archivos JSON
+        async function loadJSON(url) {
+            const response = await fetch(url);
+            const data = await response.json();
+            return data;
+        }
+
+        // Aplicar el escalador
+        function applyScaler(input, scaler) {
+            return input.map((val, i) => (val - scaler.mean[i]) / scaler.scale[i]);
+        }
+
+        // Inverso del Label Encoder
+        function inverseLabelEncode(pred, labelEncoder) {
+            return labelEncoder.classes[pred];
+        }
+
+        // Cargar el modelo, el escalador y el label encoder
+        async function loadModel() {
+            try {
+                model = await tf.loadGraphModel('model.json');
+                scaler = await loadJSON('scaler.json');
+                labelEncoder = await loadJSON('label_encoder.json');
+                console.log('Model, scaler, and label encoder loaded');
+            } catch (error) {
+                console.error('Error loading model or data:', error);
+            }
+        }
+
+        // Manejar la solicitud GET y hacer la predicción
+        async function handleRequest() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const hum = parseFloat(urlParams.get('hum'));
+            const luz = parseFloat(urlParams.get('luz'));
+            const pres = parseFloat(urlParams.get('pres'));
+            const temp = parseFloat(urlParams.get('temp'));
+            const vel = parseFloat(urlParams.get('vel'));
+
+            if (!model || !scaler || !labelEncoder) {
+                document.getElementById('prediction').innerText = 'Error loading model or data.';
+                return;
+            }
+
+            const input = [hum, luz, pres, temp, vel];
+            const scaledInput = applyScaler(input, scaler);
+
+            const tensorInput = tf.tensor2d([scaledInput], [1, 5]);
+            const prediction = model.predict(tensorInput);
+            const predClass = prediction.argMax(-1).dataSync()[0];
+            const result = inverseLabelEncode(predClass, labelEncoder);
+
+            document.getElementById('prediction').innerText = result;
+        }
+
+        // Cargar el modelo y los datos y manejar la solicitud cuando la página cargue
+        window.onload = async () => {
+            await loadModel();
+            handleRequest();
+        };
+    </script>
+</body>
+</html>
