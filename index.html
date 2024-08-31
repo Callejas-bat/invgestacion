@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weather Prediction API</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+</head>
+<body>
+    <p id="result">Cargando...</p> <!-- Mensaje mientras se realiza la predicción -->
+
     <script>
         let model, scaler, labelEncoder;
 
@@ -24,14 +28,14 @@
             return labelEncoder.classes[pred];
         }
 
-        // Función para cargar y realizar la predicción antes de que se muestre el contenido
+        // Función para cargar el modelo y hacer la predicción
         async function initializePrediction() {
             try {
-                // Cargar modelo, escalador y label encoder
+                // Cargar el modelo, escalador y label encoder
                 model = await tf.loadGraphModel('model.json');
                 scaler = await loadJSON('scaler.json');
                 labelEncoder = await loadJSON('label_encoder.json');
-                
+
                 // Obtener parámetros de la URL
                 const urlParams = new URLSearchParams(window.location.search);
                 const hum = parseFloat(urlParams.get('hum'));
@@ -40,6 +44,7 @@
                 const temp = parseFloat(urlParams.get('temp'));
                 const vel = parseFloat(urlParams.get('vel'));
 
+                // Validación de parámetros
                 if (isNaN(hum) || isNaN(luz) || isNaN(pres) || isNaN(temp) || isNaN(vel)) {
                     return 'Invalid input parameters.';
                 }
@@ -55,21 +60,19 @@
                 return inverseLabelEncode(predClass, labelEncoder);
 
             } catch (error) {
-                console.error('Error during initialization or prediction:', error);
-                return 'Error during initialization or prediction.';
+                console.error('Error during prediction:', error);
+                return 'Error during prediction.';
             }
         }
 
-        // Ejecutar la predicción y luego mostrar el resultado en el DOM
+        // Ejecutar la predicción y actualizar la página con el resultado
         async function renderResult() {
             const result = await initializePrediction();
-            document.getElementById('result').innerText = result;
+            document.getElementById('result').innerText = result; // Mostrar el resultado
         }
 
-        renderResult(); // Iniciar el proceso tan pronto como el script sea cargado
+        // Ejecutar la función tan pronto como se cargue el script
+        renderResult();
     </script>
-</head>
-<body>
-    <p id="result">Cargando...</p> <!-- Este se reemplaza rápidamente -->
 </body>
 </html>
