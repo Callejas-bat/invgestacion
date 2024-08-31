@@ -38,38 +38,45 @@
                 console.log('Model, scaler, and label encoder loaded');
             } catch (error) {
                 console.error('Error loading model or data:', error);
+                document.getElementById('prediction').innerText = 'Error loading model or data.';
             }
         }
 
         // Manejar la solicitud GET y hacer la predicción
         async function handleRequest() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const hum = parseFloat(urlParams.get('hum'));
-            const luz = parseFloat(urlParams.get('luz'));
-            const pres = parseFloat(urlParams.get('pres'));
-            const temp = parseFloat(urlParams.get('temp'));
-            const vel = parseFloat(urlParams.get('vel'));
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const hum = parseFloat(urlParams.get('hum'));
+                const luz = parseFloat(urlParams.get('luz'));
+                const pres = parseFloat(urlParams.get('pres'));
+                const temp = parseFloat(urlParams.get('temp'));
+                const vel = parseFloat(urlParams.get('vel'));
 
-            if (!model || !scaler || !labelEncoder) {
-                document.getElementById('prediction').innerText = 'Error loading model or data.';
-                return;
+                // Asegúrate de que el modelo y los datos estén cargados
+                if (!model || !scaler || !labelEncoder) {
+                    document.getElementById('prediction').innerText = 'Error: Model or data not loaded.';
+                    return;
+                }
+
+                const input = [hum, luz, pres, temp, vel];
+                const scaledInput = applyScaler(input, scaler);
+
+                const tensorInput = tf.tensor2d([scaledInput], [1, 5]);
+                const prediction = model.predict(tensorInput);
+                const predClass = prediction.argMax(-1).dataSync()[0];
+                const result = inverseLabelEncode(predClass, labelEncoder);
+
+                document.getElementById('prediction').innerText = result;
+            } catch (error) {
+                console.error('Error during prediction:', error);
+                document.getElementById('prediction').innerText = 'Error during prediction.';
             }
-
-            const input = [hum, luz, pres, temp, vel];
-            const scaledInput = applyScaler(input, scaler);
-
-            const tensorInput = tf.tensor2d([scaledInput], [1, 5]);
-            const prediction = model.predict(tensorInput);
-            const predClass = prediction.argMax(-1).dataSync()[0];
-            const result = inverseLabelEncode(predClass, labelEncoder);
-
-            document.getElementById('prediction').innerText = result;
         }
 
-        // Cargar el modelo y los datos y manejar la solicitud cuando la página cargue
+        // Cargar el modelo y los datos antes de manejar la solicitud
         window.onload = async () => {
             await loadModel();
-            handleRequest();
+            await handleRequest(); // Esperar hasta que el modelo esté cargado y listo
         };
     </script>
 </body>
