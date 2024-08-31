@@ -15,8 +15,7 @@
         // Función para cargar archivos JSON
         async function loadJSON(url) {
             const response = await fetch(url);
-            const data = await response.json();
-            return data;
+            return await response.json();
         }
 
         // Aplicar el escalador
@@ -39,6 +38,7 @@
             } catch (error) {
                 console.error('Error loading model or data:', error);
                 document.getElementById('prediction').innerText = 'Error loading model or data.';
+                throw error;
             }
         }
 
@@ -52,9 +52,8 @@
                 const temp = parseFloat(urlParams.get('temp'));
                 const vel = parseFloat(urlParams.get('vel'));
 
-                // Asegúrate de que el modelo y los datos estén cargados
-                if (!model || !scaler || !labelEncoder) {
-                    document.getElementById('prediction').innerText = 'Error: Model or data not loaded.';
+                if (isNaN(hum) || isNaN(luz) || isNaN(pres) || isNaN(temp) || isNaN(vel)) {
+                    document.getElementById('prediction').innerText = 'Invalid input parameters.';
                     return;
                 }
 
@@ -75,8 +74,12 @@
 
         // Cargar el modelo y los datos antes de manejar la solicitud
         window.onload = async () => {
-            await loadModel();
-            await handleRequest(); // Esperar hasta que el modelo esté cargado y listo
+            try {
+                await loadModel(); // Asegúrate de que el modelo esté completamente cargado
+                await handleRequest(); // Luego procesa la solicitud y muestra la predicción
+            } catch (error) {
+                console.error('Error initializing application:', error);
+            }
         };
     </script>
 </body>
