@@ -1,5 +1,7 @@
 {
   "name": "mi-proyecto",
   "version": "1.0.0",
-  "dependencies": {}
+  "dependencies": {
+    "node-fetch": "^3.3.1"
+  }
 }
