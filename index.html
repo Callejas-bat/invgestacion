@@ -7,8 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 </head>
 <body>
-    <p id="prediction">Loading...</p>
-
     <script>
         let model, scaler, labelEncoder;
 
@@ -37,7 +35,6 @@
                 console.log('Model, scaler, and label encoder loaded');
             } catch (error) {
                 console.error('Error loading model or data:', error);
-                document.getElementById('prediction').innerText = 'Error loading model or data.';
                 throw error;
             }
         }
@@ -53,7 +50,7 @@
                 const vel = parseFloat(urlParams.get('vel'));
 
                 if (isNaN(hum) || isNaN(luz) || isNaN(pres) || isNaN(temp) || isNaN(vel)) {
-                    document.getElementById('prediction').innerText = 'Invalid input parameters.';
+                    document.body.innerHTML = 'Invalid input parameters.';
                     return;
                 }
 
@@ -65,20 +62,21 @@
                 const predClass = prediction.argMax(-1).dataSync()[0];
                 const result = inverseLabelEncode(predClass, labelEncoder);
 
-                document.getElementById('prediction').innerText = result;
+                document.body.innerHTML = result;
             } catch (error) {
                 console.error('Error during prediction:', error);
-                document.getElementById('prediction').innerText = 'Error during prediction.';
+                document.body.innerHTML = 'Error during prediction.';
             }
         }
 
-        // Cargar el modelo y los datos antes de manejar la solicitud
+        // Cargar el modelo y hacer la predicción de inmediato
         window.onload = async () => {
             try {
-                await loadModel(); // Asegúrate de que el modelo esté completamente cargado
-                await handleRequest(); // Luego procesa la solicitud y muestra la predicción
+                await loadModel();
+                await handleRequest();
             } catch (error) {
                 console.error('Error initializing application:', error);
+                document.body.innerHTML = 'Initialization failed.';
             }
         };
     </script>
