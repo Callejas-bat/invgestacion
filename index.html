@@ -5,38 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weather Prediction API</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-</head>
-<body>
-    <p id="result">Cargando...</p> <!-- Mensaje mientras se realiza la predicción -->
-
     <script>
-        let model, scaler, labelEncoder;
-
-        // Función para cargar archivos JSON
         async function loadJSON(url) {
             const response = await fetch(url);
             return await response.json();
         }
 
-        // Aplicar el escalador
         function applyScaler(input, scaler) {
             return input.map((val, i) => (val - scaler.mean[i]) / scaler.scale[i]);
         }
 
-        // Inverso del Label Encoder
         function inverseLabelEncode(pred, labelEncoder) {
             return labelEncoder.classes[pred];
         }
 
-        // Función para cargar el modelo y hacer la predicción
         async function initializePrediction() {
             try {
-                // Cargar el modelo, escalador y label encoder
-                model = await tf.loadGraphModel('model.json');
-                scaler = await loadJSON('scaler.json');
-                labelEncoder = await loadJSON('label_encoder.json');
+                const model = await tf.loadGraphModel('model.json');
+                const scaler = await loadJSON('scaler.json');
+                const labelEncoder = await loadJSON('label_encoder.json');
 
-                // Obtener parámetros de la URL
                 const urlParams = new URLSearchParams(window.location.search);
                 const hum = parseFloat(urlParams.get('hum'));
                 const luz = parseFloat(urlParams.get('luz'));
@@ -44,35 +32,37 @@
                 const temp = parseFloat(urlParams.get('temp'));
                 const vel = parseFloat(urlParams.get('vel'));
 
-                // Validación de parámetros
                 if (isNaN(hum) || isNaN(luz) || isNaN(pres) || isNaN(temp) || isNaN(vel)) {
-                    return 'Invalid input parameters.';
+                    return { error: 'Invalid input parameters.' };
                 }
 
-                // Preparar los datos de entrada
                 const input = [hum, luz, pres, temp, vel];
                 const scaledInput = applyScaler(input, scaler);
 
-                // Realizar la predicción
                 const tensorInput = tf.tensor2d([scaledInput], [1, 5]);
                 const prediction = model.predict(tensorInput);
                 const predClass = prediction.argMax(-1).dataSync()[0];
-                return inverseLabelEncode(predClass, labelEncoder);
+                const result = inverseLabelEncode(predClass, labelEncoder);
+
+                return { prediction: result };
 
             } catch (error) {
                 console.error('Error during prediction:', error);
-                return 'Error during prediction.';
+                return { error: 'Error during prediction.' };
             }
         }
 
-        // Ejecutar la predicción y actualizar la página con el resultado
         async function renderResult() {
             const result = await initializePrediction();
-            document.getElementById('result').innerText = result; // Mostrar el resultado
+            // Devuelve el JSON directamente como respuesta simulando el comportamiento de una API
+            document.body.innerText = JSON.stringify(result); // Esto simula la respuesta JSON
         }
 
-        // Ejecutar la función tan pronto como se cargue el script
+        // Ejecuta la función cuando se carga el script
         renderResult();
     </script>
+</head>
+<body>
+    <!-- El cuerpo se queda en blanco porque la respuesta es un JSON -->
 </body>
 </html>
