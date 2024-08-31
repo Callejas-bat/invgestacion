@@ -35,7 +35,7 @@
                 console.log('Model, scaler, and label encoder loaded');
             } catch (error) {
                 console.error('Error loading model or data:', error);
-                throw error;
+                return 'Error loading model or data.';
             }
         }
 
@@ -50,8 +50,7 @@
                 const vel = parseFloat(urlParams.get('vel'));
 
                 if (isNaN(hum) || isNaN(luz) || isNaN(pres) || isNaN(temp) || isNaN(vel)) {
-                    document.body.innerHTML = 'Invalid input parameters.';
-                    return;
+                    return 'Invalid input parameters.';
                 }
 
                 const input = [hum, luz, pres, temp, vel];
@@ -62,10 +61,10 @@
                 const predClass = prediction.argMax(-1).dataSync()[0];
                 const result = inverseLabelEncode(predClass, labelEncoder);
 
-                document.body.innerHTML = result;
+                return result;
             } catch (error) {
                 console.error('Error during prediction:', error);
-                document.body.innerHTML = 'Error during prediction.';
+                return 'Error during prediction.';
             }
         }
 
@@ -73,7 +72,8 @@
         window.onload = async () => {
             try {
                 await loadModel();
-                await handleRequest();
+                const result = await handleRequest();
+                document.body.innerHTML = result; // Mostrar el resultado en el cuerpo de la página
             } catch (error) {
                 console.error('Error initializing application:', error);
                 document.body.innerHTML = 'Initialization failed.';
