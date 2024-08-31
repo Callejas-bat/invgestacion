@@ -2,7 +2,7 @@
     "name": "mi-proyecto",
     "version": "1.0.0",
     "dependencies": {
-      "@tensorflow/tfjs-node": "^4.0.0",
+      "@tensorflow/tfjs": "^4.0.0"
       "node-fetch": "^2.6.7"
     }
   }
