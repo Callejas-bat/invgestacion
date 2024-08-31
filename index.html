@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weather Prediction API</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-</head>
-<body>
     <script>
         let model, scaler, labelEncoder;
 
@@ -26,22 +24,15 @@
             return labelEncoder.classes[pred];
         }
 
-        // Cargar el modelo, el escalador y el label encoder
-        async function loadModel() {
+        // Función para cargar y realizar la predicción antes de que se muestre el contenido
+        async function initializePrediction() {
             try {
+                // Cargar modelo, escalador y label encoder
                 model = await tf.loadGraphModel('model.json');
                 scaler = await loadJSON('scaler.json');
                 labelEncoder = await loadJSON('label_encoder.json');
-                console.log('Model, scaler, and label encoder loaded');
-            } catch (error) {
-                console.error('Error loading model or data:', error);
-                return 'Error loading model or data.';
-            }
-        }
-
-        // Manejar la solicitud GET y hacer la predicción
-        async function handleRequest() {
-            try {
+                
+                // Obtener parámetros de la URL
                 const urlParams = new URLSearchParams(window.location.search);
                 const hum = parseFloat(urlParams.get('hum'));
                 const luz = parseFloat(urlParams.get('luz'));
@@ -53,32 +44,32 @@
                     return 'Invalid input parameters.';
                 }
 
+                // Preparar los datos de entrada
                 const input = [hum, luz, pres, temp, vel];
                 const scaledInput = applyScaler(input, scaler);
 
+                // Realizar la predicción
                 const tensorInput = tf.tensor2d([scaledInput], [1, 5]);
                 const prediction = model.predict(tensorInput);
                 const predClass = prediction.argMax(-1).dataSync()[0];
-                const result = inverseLabelEncode(predClass, labelEncoder);
+                return inverseLabelEncode(predClass, labelEncoder);
 
-                return result;
             } catch (error) {
-                console.error('Error during prediction:', error);
-                return 'Error during prediction.';
+                console.error('Error during initialization or prediction:', error);
+                return 'Error during initialization or prediction.';
             }
         }
 
-        // Cargar el modelo y hacer la predicción de inmediato
-        window.onload = async () => {
-            try {
-                await loadModel();
-                const result = await handleRequest();
-                document.body.innerHTML = result; // Mostrar el resultado en el cuerpo de la página
-            } catch (error) {
-                console.error('Error initializing application:', error);
-                document.body.innerHTML = 'Initialization failed.';
-            }
-        };
+        // Ejecutar la predicción y luego mostrar el resultado en el DOM
+        async function renderResult() {
+            const result = await initializePrediction();
+            document.getElementById('result').innerText = result;
+        }
+
+        renderResult(); // Iniciar el proceso tan pronto como el script sea cargado
     </script>
+</head>
+<body>
+    <p id="result">Cargando...</p> <!-- Este se reemplaza rápidamente -->
 </body>
 </html>
