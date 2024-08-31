@@ -1,12 +1,16 @@
+import fetch from 'node-fetch';
+
 export default async function handler(req, res) {
     try {
         // Cargar TensorFlow.js desde un CDN
-        await import('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs');
+        const response = await fetch('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs');
+        const script = await response.text();
+        eval(script); // Evalúa el script para hacer que TensorFlow esté disponible
 
         // Cargar los modelos y otros archivos JSON desde URLs
         const modelUrl = 'https://invgestacion.vercel.app/public/model.json';
         const model = await tf.loadGraphModel(modelUrl);
-        
+
         const scalerUrl = 'https://invgestacion.vercel.app/public/scaler.json';
         const scalerResponse = await fetch(scalerUrl);
         const scaler = await scalerResponse.json();
