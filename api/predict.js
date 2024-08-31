@@ -4,14 +4,14 @@ export default async function handler(req, res) {
         await import('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs');
 
         // Cargar los modelos y otros archivos desde tu carpeta pública en Vercel
-        const modelUrl = 'https://tu-dominio.vercel.app/model.json';
+        const modelUrl = 'https://invgestacion.vercel.app/public/model.json';
         const model = await tf.loadGraphModel(modelUrl);
         
-        const scalerUrl = 'https://tu-dominio.vercel.app/scaler.json';
+        const scalerUrl = 'https://invgestacion.vercel.app/public/scaler.json';
         const scalerResponse = await fetch(scalerUrl);
         const scaler = await scalerResponse.json();
 
-        const labelEncoderUrl = 'https://tu-dominio.vercel.app/label_encoder.json';
+        const labelEncoderUrl = 'https://invgestacion.vercel.app/public/label_encoder.json';
         const labelEncoderResponse = await fetch(labelEncoderUrl);
         const labelEncoder = await labelEncoderResponse.json();
 
