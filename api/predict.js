@@ -1,56 +1,38 @@
-import * as tf from '@tensorflow/tfjs';
-import path from 'path';
-import fs from 'fs';
-
-function loadJSONSync(filePath) {
-    const fileContent = fs.readFileSync(filePath, 'utf8');
-    return JSON.parse(fileContent);
-}
-
-function applyScaler(input, scaler) {
-    return input.map((val, i) => (val - scaler.mean[i]) / scaler.scale[i]);
-}
-
-function inverseLabelEncode(pred, labelEncoder) {
-    return labelEncoder.classes[pred];
-}
-
 export default async function handler(req, res) {
     try {
-        // Cargar los archivos JSON desde la carpeta public
-        const modelPath = path.join(process.cwd(), 'public', 'model.json');
-        const scalerPath = path.join(process.cwd(), 'public', 'scaler.json');
-        const labelEncoderPath = path.join(process.cwd(), 'public', 'label_encoder.json');
+        // Cargar TensorFlow.js desde un CDN
+        await import('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs');
 
-        // Cargar el modelo de TensorFlow
-        const model = await tf.loadGraphModel(`file://${modelPath}`);
+        // Cargar los modelos y otros archivos desde tu carpeta pública en Vercel
+        const modelUrl = 'https://tu-dominio.vercel.app/model.json';
+        const model = await tf.loadGraphModel(modelUrl);
         
-        // Cargar el scaler y el label encoder
-        const scaler = loadJSONSync(scalerPath);
-        const labelEncoder = loadJSONSync(labelEncoderPath);
+        const scalerUrl = 'https://tu-dominio.vercel.app/scaler.json';
+        const scalerResponse = await fetch(scalerUrl);
+        const scaler = await scalerResponse.json();
 
-        // Obtener los parámetros de la consulta
+        const labelEncoderUrl = 'https://tu-dominio.vercel.app/label_encoder.json';
+        const labelEncoderResponse = await fetch(labelEncoderUrl);
+        const labelEncoder = await labelEncoderResponse.json();
+
         const { hum, luz, pres, temp, vel } = req.query;
 
-        // Validar que todos los parámetros están presentes y son números
         if ([hum, luz, pres, temp, vel].some(val => isNaN(parseFloat(val)))) {
             return res.status(400).json({ error: 'Invalid input parameters. Ensure all parameters are numbers.' });
         }
 
-        // Procesar la entrada y hacer la predicción
         const input = [parseFloat(hum), parseFloat(luz), parseFloat(pres), parseFloat(temp), parseFloat(vel)];
-        const scaledInput = applyScaler(input, scaler);
+        const scaledInput = input.map((val, i) => (val - scaler.mean[i]) / scaler.scale[i]);
 
         const tensorInput = tf.tensor2d([scaledInput], [1, 5]);
         const prediction = model.predict(tensorInput);
         const predClass = prediction.argMax(-1).dataSync()[0];
-        const result = inverseLabelEncode(predClass, labelEncoder);
+        const result = labelEncoder.classes[predClass];
 
-        // Devolver la respuesta en formato JSON
         return res.status(200).json({ prediction: result });
 
     } catch (error) {
         console.error('Error during prediction:', error);
         return res.status(500).json({ error: 'Error during prediction.' });
     }
-}
+            }
