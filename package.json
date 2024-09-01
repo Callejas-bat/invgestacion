@@ -6,7 +6,6 @@
     "start": "vercel dev"
   },
   "dependencies": {
-    "@tensorflow/tfjs-node": "^4.6.0",
     "node-fetch": "^2.6.7"
   }
 }
