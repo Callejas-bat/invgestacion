@@ -1,23 +1,21 @@
-import fetch from 'node-fetch';
+import * as tf from '@tensorflow/tfjs-node';
+import fs from 'fs/promises';
+import path from 'path';
 
 export default async function handler(req, res) {
     try {
-        // Cargar TensorFlow.js desde un CDN
-        const response = await fetch('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs');
-        const script = await response.text();
-        eval(script); // Evalúa el script para hacer que TensorFlow esté disponible
+        // Cargar el modelo desde la carpeta public
+        const modelPath = path.join(process.cwd(), 'public', 'model.json');
+        const model = await tf.loadGraphModel(`file://${modelPath}`);
 
-        // Cargar los modelos y otros archivos JSON desde URLs
-        const modelUrl = 'https://invgestacion.vercel.app/public/model.json';
-        const model = await tf.loadGraphModel(modelUrl);
+        // Cargar el scaler y el label encoder
+        const scalerPath = path.join(process.cwd(), 'public', 'scaler.json');
+        const labelEncoderPath = path.join(process.cwd(), 'public', 'label_encoder.json');
 
-        const scalerUrl = 'https://invgestacion.vercel.app/public/scaler.json';
-        const scalerResponse = await fetch(scalerUrl);
-        const scaler = await scalerResponse.json();
-
-        const labelEncoderUrl = 'https://invgestacion.vercel.app/public/label_encoder.json';
-        const labelEncoderResponse = await fetch(labelEncoderUrl);
-        const labelEncoder = await labelEncoderResponse.json();
+        const [scaler, labelEncoder] = await Promise.all([
+            fs.readFile(scalerPath, 'utf8').then(JSON.parse),
+            fs.readFile(labelEncoderPath, 'utf8').then(JSON.parse)
+        ]);
 
         // Obtener parámetros de consulta
         const { hum, luz, pres, temp, vel } = req.query;
@@ -41,7 +39,6 @@ export default async function handler(req, res) {
         return res.status(200).json({ prediction: result });
 
     } catch (error) {
-        // Capturar y devolver errores detallados
         console.error('Error during prediction:', error);
         return res.status(500).json({ error: `Error during prediction: ${error.message}` });
     }
