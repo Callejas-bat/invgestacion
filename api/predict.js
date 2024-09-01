@@ -1,21 +1,23 @@
-import * as tf from '@tensorflow/tfjs-node';
-import fs from 'fs/promises';
-import path from 'path';
+import * as tf from '@tensorflow/tfjs';
+import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
     try {
-        // Cargar el modelo desde la carpeta public
-        const modelPath = path.join(process.cwd(), 'public', 'model.json');
-        const model = await tf.loadGraphModel(`file://${modelPath}`);
+        // Cargar el modelo desde una URL externa
+        const modelUrl = 'https://tu-cdn-o-s3-bucket.com/model.json';
+        const model = await tf.loadGraphModel(modelUrl);
 
-        // Cargar el scaler y el label encoder
-        const scalerPath = path.join(process.cwd(), 'public', 'scaler.json');
-        const labelEncoderPath = path.join(process.cwd(), 'public', 'label_encoder.json');
+        // Cargar el scaler y el label encoder desde URLs
+        const scalerUrl = 'https://tu-cdn-o-s3-bucket.com/scaler.json';
+        const labelEncoderUrl = 'https://tu-cdn-o-s3-bucket.com/label_encoder.json';
 
-        const [scaler, labelEncoder] = await Promise.all([
-            fs.readFile(scalerPath, 'utf8').then(JSON.parse),
-            fs.readFile(labelEncoderPath, 'utf8').then(JSON.parse)
+        const [scalerResponse, labelEncoderResponse] = await Promise.all([
+            fetch(scalerUrl),
+            fetch(labelEncoderUrl)
         ]);
+
+        const scaler = await scalerResponse.json();
+        const labelEncoder = await labelEncoderResponse.json();
 
         // Obtener parámetros de consulta
         const { hum, luz, pres, temp, vel } = req.query;
